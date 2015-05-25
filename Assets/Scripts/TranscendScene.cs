@@ -1,10 +1,12 @@
-﻿using UnityEngine;
+﻿using System;
+using UnityEngine;
 using System.Collections;
 using UnityEngine.Events;
 
 public class TranscendScene : MonoBehaviour
 {
     private int gameMode = 0;
+    private int score = 0;
 
     public int GameMode
     {
@@ -12,8 +14,14 @@ public class TranscendScene : MonoBehaviour
         set
         {
             gameMode = value;
-            ChangeScene();
+            ChangeScene("Level1");
         }
+    }
+
+    public int Score
+    {
+        get { return score; }
+        set { score = value; }
     }
 
     // Use this for initialization
@@ -22,8 +30,8 @@ public class TranscendScene : MonoBehaviour
         DontDestroyOnLoad(gameObject);
     }
 
-    private void ChangeScene()
+    public void ChangeScene(String name)
     {
-        Application.LoadLevel("Level1");
+        Application.LoadLevel(name);
     }
 }

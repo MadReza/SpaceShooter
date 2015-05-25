@@ -240,7 +240,7 @@ public class Player : MonoBehaviour
         {
             case 0:
                 lifes[0].enabled = false;
-                GameOver();
+                gameController.GameOver();
                 //TODO Show Game Over... Switch To Main Screen
                 break;
             case 1:
@@ -259,10 +259,5 @@ public class Player : MonoBehaviour
                 lifes[2].enabled = true;
                 break;
         }
-    }
-
-    private void GameOver()
-    {
-        Debug.Log("Implement GameOver");
     }
 }

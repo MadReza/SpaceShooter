@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Security.Cryptography;
 using UnityEditor;
 using UnityEngine;
 using System.Collections;
@@ -13,6 +14,7 @@ public class Enemy : MonoBehaviour
     [SerializeField] private GameObject explosion;
     [SerializeField] private AudioClip explosionAudioClip;
 
+    private Wave waveController;
     private Rigidbody2D _rigidbody2D;
     private GameObject playerGameObject;
     private float nextFire = 0;
@@ -41,12 +43,18 @@ public class Enemy : MonoBehaviour
     {
         _rigidbody2D = GetComponent<Rigidbody2D>();
         CalculateScreenBorder();
+        GetParent();
         GetAudioSources();
         GetPlayer();
         nextFire = 10.0f;   //First Fire after Spawn
         initialTime = Time.time;
         StartingSide();
         StartCoroutine(Shoot());
+    }
+
+    private void GetParent()
+    {
+        waveController = GetComponentInParent<Wave>();
     }
 
     //For EnemyB Types
@@ -64,9 +72,24 @@ public class Enemy : MonoBehaviour
     {
         if (!isShuttingDown)
         {
-            Instantiate(explosion, transform.position, Quaternion.identity);
-            AudioSource.PlayClipAtPoint(explosionAudioClip, transform.position);
+           //Moved to Died
         }
+    }
+
+    public void Died()
+    {
+        Instantiate(explosion, transform.position, Quaternion.identity);
+        AudioSource.PlayClipAtPoint(explosionAudioClip, transform.position);
+        switch (enemyType)
+        {
+            case EnemyType.A:
+                waveController.ChildDied(100);
+                break;
+            case EnemyType.B:
+                waveController.ChildDied(200);
+                break;
+        }
+        Destroy(gameObject);
     }
 
     void OnApplicationQuit()
@@ -88,6 +111,8 @@ public class Enemy : MonoBehaviour
     private void Update()
     {
         Move();
+        if (transform.position.y < bottomBorder)
+            Destroy(gameObject);
     }
 
     private void Move()

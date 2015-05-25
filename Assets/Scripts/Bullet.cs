@@ -8,16 +8,21 @@ public class Bullet : MonoBehaviour
     private Rigidbody2D _rigidbody2D;
     private GameController gameController;
 
+    private int wrapped = 0;
+
     private float leftBorder;
     private float rightBorder;
     private float bottomBorder;
     private float topBorder;
+
+    private GameController.Difficulty gameDifficulty;
 
 	// Use this for initialization
 	void Start ()
 	{
         CalculateScreenBorder();
 	    GetGameController();
+	    gameDifficulty = gameController.DifficultyLevel;
 	}
 
     private void GetGameController()
@@ -35,7 +40,6 @@ public class Bullet : MonoBehaviour
 
     void OnTriggerEnter2D(Collider2D other) //TODO: Make GameObject take care of themselves.
     {
-        Debug.Log(other.gameObject.tag);
         switch (other.tag)
         {
             case "EnemyA":
@@ -63,8 +67,8 @@ public class Bullet : MonoBehaviour
     {
         if (tag == "EnemyBullet")
             return;
-        gameController.AddScore(100);
-        Destroy(enemy);
+        gameController.AddScore(points);
+        enemy.GetComponent<Enemy>().Died();
         Destroy(gameObject);
     }
 
@@ -88,16 +92,40 @@ public class Bullet : MonoBehaviour
 	// Update is called once per frame
 	void Update ()
 	{
-	    OutOfBounds();
+	    if (gameDifficulty == GameController.Difficulty.Normal && OutOfBounds())
+	        Destroy(gameObject);
+	    else if (OutOfBounds())
+	        WrapBullets();
 	}
 
-    private void OutOfBounds()
+    private void WrapBullets()
+    {
+        if (wrapped >= 3) //We start at 0
+        {
+            Destroy(gameObject);
+        }
+        wrapped++;
+        Vector3 temp = transform.position;
+        if (temp.x < leftBorder || temp.x > rightBorder)
+        {
+            temp.x *= -1;
+
+        }
+        else if (temp.y > topBorder || temp.y < bottomBorder)
+        {
+            temp.y *= -1;
+        }
+        transform.position = temp;
+    }
+
+    private bool OutOfBounds()
     {
         if (transform.position.x < leftBorder || transform.position.x > rightBorder ||
             transform.position.y < bottomBorder || transform.position.y > topBorder)
         {
-            Destroy(gameObject);
+            return true;
         }
+        return false;
     }
 
     private void CalculateScreenBorder()

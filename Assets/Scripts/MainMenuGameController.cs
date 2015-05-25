@@ -21,5 +21,6 @@ public class MainMenuGameController : MonoBehaviour
         TranscendScene script = transcendGameObject.GetComponent<TranscendScene>();
         sceneButtons[0].onClick.AddListener(() => { script.GameMode = 0; }); //Normal Mode
         sceneButtons[1].onClick.AddListener(() => { script.GameMode = 1; }); //Bullet Hell Mode
+        script.Score = 0;
     }
 }

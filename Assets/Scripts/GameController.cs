@@ -8,14 +8,18 @@ public class GameController : MonoBehaviour
 {
     [SerializeField] private List<GameObject> enemies;
     [SerializeField] private Text scoreText;
+    [SerializeField] private GameObject gameMessagePanel;
+    [SerializeField] private Text gameText;
+    [SerializeField] private GameObject waveParentContainer;
 
-    private enum Difficulty
+    public enum Difficulty
     {
         Normal,
         BulletHell
     }
 
-    private Difficulty difficulty;
+    private Difficulty difficultyLevel;
+    private TranscendScene transcendScript;
 
     private int score;
     private float initialTimeStart;
@@ -24,6 +28,12 @@ public class GameController : MonoBehaviour
     private float rightBorder;
     private float bottomBorder;
     private float topBorder;
+
+    public Difficulty DifficultyLevel
+    {
+        get { return difficultyLevel; }
+        set { difficultyLevel = value; }
+    }
 
     void Start()
     {
@@ -35,42 +45,55 @@ public class GameController : MonoBehaviour
         StartCoroutine(SpawnWaves());
     }
 
+    void Update()
+    {
+        float timeLasp = Time.time - initialTimeStart;
+
+        if (timeLasp > 5 && timeLasp < 10)
+        {
+            gameText.text = "Get Ready, Here They Come!";
+        }
+        else if (timeLasp > 10 && timeLasp < 12)
+        {
+            gameMessagePanel.SetActive(false);
+        }
+    }
+
     private void GetTranscendData()
     {
         GameObject transcendedGameObject = GameObject.FindGameObjectWithTag("TranscendScene");
-        TranscendScene transcendScript = transcendedGameObject.GetComponent<TranscendScene>();
+        transcendScript = transcendedGameObject.GetComponent<TranscendScene>();
         if (transcendScript.GameMode == 0)
-            difficulty = Difficulty.Normal;
+            DifficultyLevel = Difficulty.Normal;
         else if (transcendScript.GameMode == 1)
-            difficulty = Difficulty.BulletHell;
+            DifficultyLevel = Difficulty.BulletHell;
         //TODO get score from transcendScript
     }
 
     IEnumerator SpawnWaves()
     {
-        //Vector3 spawnPosition = new Vector3(0, 0, 0);
-        //Instantiate(enemy1, spawnPosition, enemy1.transform.rotation);
-
         yield return new WaitForSeconds(12.0f); //Wait for Take off from platform
         float waveStartTime = Time.time;
         float waveLimit = 30.0f;
         while (Time.time-waveStartTime < waveLimit)
         {
+            GameObject parentGameObject = Instantiate(waveParentContainer, new Vector3(), Quaternion.identity) as GameObject;
+
             int randomEnemySelector = Random.Range(0, 100)%2;
             if (randomEnemySelector == 0)
             {
-                SpawnWaveA();
+                SpawnWaveA(parentGameObject);
             }
             else
             {
-                StartCoroutine(SpawnWaveB());
+                StartCoroutine(SpawnWaveB(parentGameObject));
             }
-            yield return new WaitForSeconds(5.0f);  //Wait Between Waves
+            yield return new WaitForSeconds(6.0f);  //Wait Between Waves
         }
         //TODO Boss
     }
 
-    private IEnumerator SpawnWaveB()
+    private IEnumerator SpawnWaveB(GameObject parentGameObject)
     {
         Vector3 spawnPosition;
         int randomTopEdgeSpawn = Random.Range(0, 100)%2;
@@ -82,26 +105,35 @@ public class GameController : MonoBehaviour
         for (int i = 0; i < 5; i++)
         {
             GameObject gameObject = Instantiate(enemies[1], spawnPosition, enemies[1].transform.rotation) as GameObject;
+            gameObject.transform.parent = parentGameObject.transform;
             gameObject.GetComponent<Enemy>().SetEnemyType("B");
             yield return new WaitForSeconds(1.0f);
         }
     }
 
-    private void SpawnWaveA()
+    private void SpawnWaveA(GameObject parentGameObject)
     {
         //Initial Random Location To Spawn V formation
         Vector3 spawnPosition = new Vector3(Random.Range(leftBorder+2,rightBorder-2),topBorder+3,0); //spawn while having into account formation requirements
-        Instantiate(enemies[0], spawnPosition, enemies[0].transform.rotation);
+        GameObject child = Instantiate(enemies[0], spawnPosition, enemies[0].transform.rotation) as GameObject;
+        child.transform.parent = parentGameObject.transform;
 
         //Initiates others in a V formation from the starter
         spawnPosition += new Vector3(1, 1, 0);
-        Instantiate(enemies[0], spawnPosition, enemies[0].transform.rotation);
+        child = Instantiate(enemies[0], spawnPosition, enemies[0].transform.rotation) as GameObject;
+        child.transform.parent = parentGameObject.transform;
+
         spawnPosition += new Vector3(-2, 0, 0);
-        Instantiate(enemies[0], spawnPosition, enemies[0].transform.rotation);
+        child = Instantiate(enemies[0], spawnPosition, enemies[0].transform.rotation) as GameObject;
+        child.transform.parent = parentGameObject.transform;
+
         spawnPosition += new Vector3(-1, 1, 0);
-        Instantiate(enemies[0], spawnPosition, enemies[0].transform.rotation);
+        child = Instantiate(enemies[0], spawnPosition, enemies[0].transform.rotation) as GameObject;
+        child.transform.parent = parentGameObject.transform;
+
         spawnPosition += new Vector3(4, 0, 0);
-        Instantiate(enemies[0], spawnPosition, enemies[0].transform.rotation);
+        child = Instantiate(enemies[0], spawnPosition, enemies[0].transform.rotation) as GameObject;
+        child.transform.parent = parentGameObject.transform;
     }
 
     void UpdateScore()
@@ -111,6 +143,8 @@ public class GameController : MonoBehaviour
 
     public void AddScore(int points)
     {
+        if (DifficultyLevel == Difficulty.BulletHell)
+            points *= 2;
         score += points;
         if (score < 0)
             score = 0;
@@ -124,5 +158,17 @@ public class GameController : MonoBehaviour
         rightBorder = Camera.main.ViewportToWorldPoint(new Vector3(1, 0, dist)).x;
         bottomBorder = Camera.main.ViewportToWorldPoint(new Vector3(0, 0, dist)).y;
         topBorder = Camera.main.ViewportToWorldPoint(new Vector3(0, 1, dist)).y;
+    }
+
+    public void GameOver()
+    {
+        transcendScript.Score = score;
+        StartCoroutine(SwitchToGameOverScene());
+    }
+
+    private IEnumerator SwitchToGameOverScene()
+    {
+        yield return new WaitForSeconds(0.5f); //Wait for TSpaceShip To explode
+        transcendScript.ChangeScene("GameOver");
     }
 }
